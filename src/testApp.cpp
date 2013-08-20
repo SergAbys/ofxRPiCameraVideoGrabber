@@ -9,8 +9,8 @@ void testApp::setup()
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	consoleListener.setup(this);
 	shader.load("PostProcessing.vert", "PostProcessing.frag", "");
-	omxVideoGrabber.setup(1280, 720, 60);
-	
+	omxVideoGrabber.setup(1280, 720, 30);
+	controlPanel.setup(&omxVideoGrabber);
 	
 	
 }
@@ -22,6 +22,7 @@ void testApp::update()
 	{
 		return;
 	}
+	controlPanel.update();
 }
 
 
@@ -56,6 +57,7 @@ void testApp::draw(){
 	
 	info <<	filterCollection.filterList << "\n";
 	ofDrawBitmapStringHighlight(info.str(), 100, 100, ofColor::black, ofColor::yellow);
+	controlPanel.draw();
 }
 
 //--------------------------------------------------------------

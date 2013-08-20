@@ -5,6 +5,9 @@
 #include "ConsoleListener.h"
 #include "ofxOMXVideoGrabber.h"
 #include "ImageFilterCollection.h"
+#include "ControlPanel.h"
+
+
 
 class testApp : public ofBaseApp, public SSHKeyListener{
 
@@ -26,6 +29,7 @@ class testApp : public ofBaseApp, public SSHKeyListener{
 	ofxOMXVideoGrabber omxVideoGrabber;
 	
 	ImageFilterCollection filterCollection;
+	ControlPanel controlPanel;
 	
 };
 
