@@ -1,12 +1,12 @@
 /*
- *  ofxOMXVideoGrabber.cpp
+ *  ofxRPiCameraVideoGrabber.cpp
  *
  *  Created by jason van cleave on 6/1/13.
  *  Thanks to https://github.com/linuxstb/pidvbip for the example of configuring the camera via OMX
  *
  */
 
-#include "ofxOMXVideoGrabber.h"
+#include "ofxRPiCameraVideoGrabber.h"
 
 #define OMX_INIT_STRUCTURE(a) \
 memset(&(a), 0, sizeof(a)); \
@@ -20,17 +20,21 @@ memset(&(a), 0, sizeof(a)); \
 #define EGL_RENDER_OUTPUT_PORT	221
 #define CAMERA_OUTPUT_PORT		71
 
-string ofxOMXVideoGrabber::LOG_NAME = "ofxOMXVideoGrabber";
+string ofxRPiCameraVideoGrabber::LOG_NAME = "ofxRPiCameraVideoGrabber";
 
-ofxOMXVideoGrabber::ofxOMXVideoGrabber()
+ofxRPiCameraVideoGrabber::ofxRPiCameraVideoGrabber()
 {
-	isReady = false;
-	isClosed = false;
-	eglBuffer = NULL;
+	ready		= false;
+	eglBuffer	= NULL;
+	videoWidth	= 0;
+	videoHeight	= 0;
+	framerate	= 0;
+	textureID	= 0;
+	frameCounter = 0;
 }
 
 
-void ofxOMXVideoGrabber::setup(int videoWidth=1280, int videoHeight=720, int framerate=60)
+void ofxRPiCameraVideoGrabber::setup(int videoWidth=1280, int videoHeight=720, int framerate=60)
 {
 	this->videoWidth = videoWidth;
 	this->videoHeight = videoHeight;
@@ -45,7 +49,7 @@ void ofxOMXVideoGrabber::setup(int videoWidth=1280, int videoHeight=720, int fra
 	}
 
 	OMX_CALLBACKTYPE cameraCallbacks;
-	cameraCallbacks.EventHandler    = &ofxOMXVideoGrabber::cameraEventHandlerCallback;
+	cameraCallbacks.EventHandler    = &ofxRPiCameraVideoGrabber::cameraEventHandlerCallback;
 	
 	string cameraComponentName = "OMX.broadcom.camera";
 	
@@ -109,18 +113,40 @@ void ofxOMXVideoGrabber::setup(int videoWidth=1280, int videoHeight=720, int fra
 	setLEDStatus(false);
 }
 
+int ofxRPiCameraVideoGrabber::getWidth()
+{
+	return videoWidth;
+}
+int ofxRPiCameraVideoGrabber::getHeight()
+{
+	return videoHeight;
+}
 
-ofTexture& ofxOMXVideoGrabber::getTextureReference()
+int ofxRPiCameraVideoGrabber::getFrameRate()
+{
+	return framerate;
+}
+
+GLuint ofxRPiCameraVideoGrabber::getTextureID()
+{
+	return textureID;
+}
+
+ofTexture& ofxRPiCameraVideoGrabber::getTextureReference()
 {
 	return tex;
 }
 
-void ofxOMXVideoGrabber::draw()
+void ofxRPiCameraVideoGrabber::draw()
 {
 	tex.draw(0, 0);
 }
 
-void ofxOMXVideoGrabber::setExposureMode(OMX_EXPOSURECONTROLTYPE exposureMode)
+bool ofxRPiCameraVideoGrabber::isReady()
+{
+	return ready;
+}
+void ofxRPiCameraVideoGrabber::setExposureMode(OMX_EXPOSURECONTROLTYPE exposureMode)
 {
 	OMX_ERRORTYPE error = OMX_ErrorNone;
 	
@@ -137,7 +163,7 @@ void ofxOMXVideoGrabber::setExposureMode(OMX_EXPOSURECONTROLTYPE exposureMode)
 	}
 }
 
-void ofxOMXVideoGrabber::setMeteringMode(OMX_METERINGTYPE meteringType, int evCompensation, int sensitivity, bool autoSensitivity)
+void ofxRPiCameraVideoGrabber::setMeteringMode(OMX_METERINGTYPE meteringType, int evCompensation, int sensitivity, bool autoSensitivity)
 {
 	OMX_ERRORTYPE error = OMX_ErrorNone;
 	
@@ -171,7 +197,7 @@ void ofxOMXVideoGrabber::setMeteringMode(OMX_METERINGTYPE meteringType, int evCo
 	}
 }
 
-void ofxOMXVideoGrabber::setSharpness(int sharpness_) //-100 to 100
+void ofxRPiCameraVideoGrabber::setSharpness(int sharpness_) //-100 to 100
 {
 	sharpness = sharpness_;
 	
@@ -189,7 +215,7 @@ void ofxOMXVideoGrabber::setSharpness(int sharpness_) //-100 to 100
 	}
 }
 
-void ofxOMXVideoGrabber::setFrameStabilization(bool doStabilization)
+void ofxRPiCameraVideoGrabber::setFrameStabilization(bool doStabilization)
 {
 	OMX_ERRORTYPE error = OMX_ErrorNone;
 	
@@ -212,7 +238,7 @@ void ofxOMXVideoGrabber::setFrameStabilization(bool doStabilization)
 	}
 }
 
-void ofxOMXVideoGrabber::setContrast(int contrast_ ) //-100 to 100 
+void ofxRPiCameraVideoGrabber::setContrast(int contrast_ ) //-100 to 100 
 {
 	contrast = contrast_;
 	
@@ -230,7 +256,7 @@ void ofxOMXVideoGrabber::setContrast(int contrast_ ) //-100 to 100
 	}
 }
 
-void ofxOMXVideoGrabber::setBrightness(int brightness_ ) //0 to 100
+void ofxRPiCameraVideoGrabber::setBrightness(int brightness_ ) //0 to 100
 {
 	brightness = brightness_;
 	
@@ -248,7 +274,7 @@ void ofxOMXVideoGrabber::setBrightness(int brightness_ ) //0 to 100
 	}
 }
 
-void ofxOMXVideoGrabber::setSaturation(int saturation_) //-100 to 100
+void ofxRPiCameraVideoGrabber::setSaturation(int saturation_) //-100 to 100
 {
 	saturation = saturation_;
 	
@@ -267,7 +293,7 @@ void ofxOMXVideoGrabber::setSaturation(int saturation_) //-100 to 100
 }
 
 
-void ofxOMXVideoGrabber::setWhiteBalance(OMX_WHITEBALCONTROLTYPE controlType)
+void ofxRPiCameraVideoGrabber::setWhiteBalance(OMX_WHITEBALCONTROLTYPE controlType)
 {
 	OMX_ERRORTYPE error = OMX_ErrorNone;
 	
@@ -284,7 +310,7 @@ void ofxOMXVideoGrabber::setWhiteBalance(OMX_WHITEBALCONTROLTYPE controlType)
 }
 
 
-void ofxOMXVideoGrabber::setColorEnhancement(bool doColorEnhance, int U, int V)
+void ofxRPiCameraVideoGrabber::setColorEnhancement(bool doColorEnhance, int U, int V)
 {
 	OMX_ERRORTYPE error = OMX_ErrorNone;
 	
@@ -310,7 +336,7 @@ void ofxOMXVideoGrabber::setColorEnhancement(bool doColorEnhance, int U, int V)
 	}
 }
 
-void ofxOMXVideoGrabber::setLEDStatus(bool status)
+void ofxRPiCameraVideoGrabber::setLEDStatus(bool status)
 {
 	OMX_ERRORTYPE error = OMX_ErrorNone;
 	
@@ -325,7 +351,7 @@ void ofxOMXVideoGrabber::setLEDStatus(bool status)
 		ofLog(OF_LOG_ERROR, "camera setLEDStatus FAIL error: 0x%08x", error);
 	}
 }
-void ofxOMXVideoGrabber::applyImageFilter(OMX_IMAGEFILTERTYPE imageFilter)
+void ofxRPiCameraVideoGrabber::applyImageFilter(OMX_IMAGEFILTERTYPE imageFilter)
 {
 	OMX_CONFIG_IMAGEFILTERTYPE imagefilterConfig;
 	OMX_INIT_STRUCTURE(imagefilterConfig);
@@ -339,7 +365,7 @@ void ofxOMXVideoGrabber::applyImageFilter(OMX_IMAGEFILTERTYPE imageFilter)
 	}
 }
 
-void ofxOMXVideoGrabber::generateEGLImage()
+void ofxRPiCameraVideoGrabber::generateEGLImage()
 {
 	
 	ofAppEGLWindow *appEGLWindow = (ofAppEGLWindow *) ofGetWindowPtr();
@@ -411,17 +437,17 @@ void logEvent(string callingFunction, OMX_EVENTTYPE eEvent)
 	}
 }
 
-OMX_ERRORTYPE ofxOMXVideoGrabber::cameraEventHandlerCallback(OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent, OMX_U32 nData1, OMX_U32 nData2, OMX_PTR pEventData)
+OMX_ERRORTYPE ofxRPiCameraVideoGrabber::cameraEventHandlerCallback(OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent, OMX_U32 nData1, OMX_U32 nData2, OMX_PTR pEventData)
 {
 	/*ofLog(OF_LOG_VERBOSE, 
-		  "ofxOMXVideoGrabber::%s - eEvent(0x%x), nData1(0x%lx), nData2(0x%lx), pEventData(0x%p)\n",
+		  "ofxRPiCameraVideoGrabber::%s - eEvent(0x%x), nData1(0x%lx), nData2(0x%lx), pEventData(0x%p)\n",
 		  __func__, eEvent, nData1, nData2, pEventData);*/
 	logEvent(__func__, eEvent);
 	switch (eEvent) 
 	{
 		case OMX_EventParamOrConfigChanged:
 		{
-			ofxOMXVideoGrabber *grabber = static_cast<ofxOMXVideoGrabber*>(pAppData);
+			ofxRPiCameraVideoGrabber *grabber = static_cast<ofxRPiCameraVideoGrabber*>(pAppData);
 			grabber->onCameraEventParamOrConfigChanged();
 			break;
 		}			
@@ -433,27 +459,28 @@ OMX_ERRORTYPE ofxOMXVideoGrabber::cameraEventHandlerCallback(OMX_HANDLETYPE hCom
 	return OMX_ErrorNone;
 }
 
-OMX_ERRORTYPE ofxOMXVideoGrabber::renderEventHandlerCallback(OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent, OMX_U32 nData1, OMX_U32 nData2, OMX_PTR pEventData)
+OMX_ERRORTYPE ofxRPiCameraVideoGrabber::renderEventHandlerCallback(OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent, OMX_U32 nData1, OMX_U32 nData2, OMX_PTR pEventData)
 {
 	logEvent(__func__, eEvent);
 	return OMX_ErrorNone;
 }
 
 
-OMX_ERRORTYPE ofxOMXVideoGrabber::renderEmptyBufferDone(OMX_IN OMX_HANDLETYPE hComponent, OMX_IN OMX_PTR pAppData, OMX_IN OMX_BUFFERHEADERTYPE* pBuffer)
+OMX_ERRORTYPE ofxRPiCameraVideoGrabber::renderEmptyBufferDone(OMX_IN OMX_HANDLETYPE hComponent, OMX_IN OMX_PTR pAppData, OMX_IN OMX_BUFFERHEADERTYPE* pBuffer)
 {
 	ofLogVerbose(LOG_NAME) << "renderEmptyBufferDone";
 	return OMX_ErrorNone;
 }
 
-OMX_ERRORTYPE ofxOMXVideoGrabber::renderFillBufferDone(OMX_IN OMX_HANDLETYPE hComponent, OMX_IN OMX_PTR pAppData, OMX_IN OMX_BUFFERHEADERTYPE* pBuffer)
+OMX_ERRORTYPE ofxRPiCameraVideoGrabber::renderFillBufferDone(OMX_IN OMX_HANDLETYPE hComponent, OMX_IN OMX_PTR pAppData, OMX_IN OMX_BUFFERHEADERTYPE* pBuffer)
 {	
-	ofxOMXVideoGrabber *grabber = static_cast<ofxOMXVideoGrabber*>(pAppData);
+	ofxRPiCameraVideoGrabber *grabber = static_cast<ofxRPiCameraVideoGrabber*>(pAppData);
+	grabber->frameCounter++;
 	OMX_ERRORTYPE error = OMX_FillThisBuffer(grabber->render, grabber->eglBuffer);
 	return error;
 }
 
-void ofxOMXVideoGrabber::onCameraEventParamOrConfigChanged()
+void ofxRPiCameraVideoGrabber::onCameraEventParamOrConfigChanged()
 {
 	ofLogVerbose(LOG_NAME) << "onCameraEventParamOrConfigChanged";
 	
@@ -477,9 +504,9 @@ void ofxOMXVideoGrabber::onCameraEventParamOrConfigChanged()
 	
 	//Set up texture renderer
 	OMX_CALLBACKTYPE renderCallbacks;
-	renderCallbacks.EventHandler    = &ofxOMXVideoGrabber::renderEventHandlerCallback;
-	renderCallbacks.EmptyBufferDone	= &ofxOMXVideoGrabber::renderEmptyBufferDone;
-	renderCallbacks.FillBufferDone	= &ofxOMXVideoGrabber::renderFillBufferDone;
+	renderCallbacks.EventHandler    = &ofxRPiCameraVideoGrabber::renderEventHandlerCallback;
+	renderCallbacks.EmptyBufferDone	= &ofxRPiCameraVideoGrabber::renderEmptyBufferDone;
+	renderCallbacks.FillBufferDone	= &ofxRPiCameraVideoGrabber::renderFillBufferDone;
 	
 	string componentName = "OMX.broadcom.egl_render";
 	
@@ -548,7 +575,7 @@ void ofxOMXVideoGrabber::onCameraEventParamOrConfigChanged()
 	if(error == OMX_ErrorNone)
 	{
 		ofLogVerbose(LOG_NAME) << "render OMX_FillThisBuffer PASS";
-		isReady = true;
+		ready = true;
 	}else 
 	{
 		ofLog(OF_LOG_ERROR, "render OMX_FillThisBuffer FAIL error: 0x%08x", error);
@@ -557,9 +584,9 @@ void ofxOMXVideoGrabber::onCameraEventParamOrConfigChanged()
 
 //untested - I guess could be used to close manually
 //app and camera seem to close fine on exit
-void ofxOMXVideoGrabber::close()
+void ofxRPiCameraVideoGrabber::close()
 {
-	isReady = false;
+	ready = false;
 	OMX_ERRORTYPE error = OMX_SendCommand(camera, OMX_CommandStateSet, OMX_StateIdle, NULL);
 	if (error != OMX_ErrorNone) 
 	{
@@ -616,11 +643,10 @@ void ofxOMXVideoGrabber::close()
 		eglDestroyImageKHR(display, eglImage);
 	}
 	
-	isClosed = true;
 }
 
 
-OMX_ERRORTYPE ofxOMXVideoGrabber::disableAllPortsForComponent(OMX_HANDLETYPE* handle)
+OMX_ERRORTYPE ofxRPiCameraVideoGrabber::disableAllPortsForComponent(OMX_HANDLETYPE* handle)
 {
 	
 	OMX_ERRORTYPE error = OMX_ErrorNone;
