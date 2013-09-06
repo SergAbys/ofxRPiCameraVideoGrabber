@@ -6,6 +6,7 @@ ControlPanel::ControlPanel()
 	localPort = 6666;
 	remotePort = 6667;
 	omxVideoGrabber = NULL;
+	doHide = false;
 }
 
 void ControlPanel::setup(ofxOMXVideoGrabber* omxVideoGrabber_)
@@ -20,7 +21,8 @@ void ControlPanel::setup(ofxOMXVideoGrabber* omxVideoGrabber_)
     frameStabilizationEnabled.set("FrameStabilization", false);
     colorEnhancementEnabled.set("ColorEnhancement", false);
     ledEnabled.set("LED", false);
-    
+    hideGui.set("hideGui", false);
+	
 	parameters.add(sharpness);
 	sharpness.addListener(this, &ControlPanel::onSharpnessChanged);
 	
@@ -42,12 +44,13 @@ void ControlPanel::setup(ofxOMXVideoGrabber* omxVideoGrabber_)
     parameters.add(ledEnabled);
 	ledEnabled.addListener(this, &ControlPanel::onLEDEnabledChanged);
 	
-	
+	parameters.add(hideGui);
+	hideGui.addListener(this, &ControlPanel::onHideGuiChanged);
 	
 	gui.setup(parameters);
 	// by now needs to pass the gui parameter groups since the panel internally creates it's own group
 	sync.setup((ofParameterGroup&)gui.getParameter(), localPort, "localhost", remotePort);
-	gui.setPosition(ofPoint(ofGetWidth()-gui.getWidth(), 50));
+	gui.setPosition(ofPoint(ofGetWidth()-gui.getWidth()-100, 50));
 	
 }
 
@@ -59,8 +62,16 @@ void ControlPanel::update()
 
 void ControlPanel::draw()
 {
-	
+	if (doHide) 
+	{
+		return;
+	}
 	gui.draw();
+}
+
+void ControlPanel::onHideGuiChanged(bool & doHide)
+{
+	this->doHide = doHide;
 }
 
 void ControlPanel::onSharpnessChanged(int & sharpness_)

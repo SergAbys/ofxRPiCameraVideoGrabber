@@ -25,6 +25,8 @@ private:
 	ofParameter<bool> frameStabilizationEnabled;
 	ofParameter<bool> colorEnhancementEnabled;
 	ofParameter<bool> ledEnabled;
+	ofParameter<bool> hideGui;
+	
 	ofParameterGroup parameters;
 	ofxPanel gui;
 	
@@ -33,7 +35,7 @@ private:
 	int localPort;
 	int remotePort;
 	
-	
+	bool doHide;
 	void onSharpnessChanged(int &sharpness_);
 	void onContrastChanged(int &constrast_);
 	void onBrightnessChanged(int &brightness_);
@@ -42,4 +44,5 @@ private:
 	void onFrameStabilizationChanged(bool &doFrameStabilization);
 	void onColorEnhancementChanged(bool &doColorEnhancement);
 	void onLEDEnabledChanged(bool &doEnableLED);
+	void onHideGuiChanged(bool & doHide);
 };
