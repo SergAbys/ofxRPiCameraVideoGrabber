@@ -50,6 +50,12 @@ public:
 	bool isReady();
 	int frameCounter;
 	
+	
+	int sharpness;	//	-100 to 100
+	int contrast;	//  -100 to 100 
+	int brightness; //     0 to 100
+	int saturation; //  -100 to 100 
+	
 private:
 	void onCameraEventParamOrConfigChanged();
 	OMX_ERRORTYPE disableAllPortsForComponent(OMX_HANDLETYPE* m_handle);
@@ -82,10 +88,7 @@ private:
 	
 	static string LOG_NAME;
 	
-	int sharpness;	//	-100 to 100
-	int contrast;	//  -100 to 100 
-	int brightness; //     0 to 100
-	int saturation; //  -100 to 100 
+	
 	
 	void close();
 	

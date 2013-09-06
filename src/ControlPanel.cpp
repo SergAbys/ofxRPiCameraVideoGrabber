@@ -5,19 +5,19 @@ ControlPanel::ControlPanel()
 {
 	localPort = 6666;
 	remotePort = 6667;
-	omxVideoGrabber = NULL;
+	rpiCameraVideoGrabber = NULL;
 	doHide = false;
 }
 
-void ControlPanel::setup(ofxOMXVideoGrabber* omxVideoGrabber_)
+void ControlPanel::setup(ofxRPiCameraVideoGrabber* rpiCameraVideoGrabber_)
 {
-	omxVideoGrabber = omxVideoGrabber_;
+	rpiCameraVideoGrabber = rpiCameraVideoGrabber_;
 	parameters.setName("parameters");
     
-    sharpness.set("sharpness", omxVideoGrabber->sharpness, -100, 100);
-    contrast.set("contrast", omxVideoGrabber->contrast, -100, 100);
-    brightness.set("brightness", omxVideoGrabber->brightness, 0, 100);
-    saturation.set("saturation", omxVideoGrabber->saturation, -100, 100);
+    sharpness.set("sharpness", rpiCameraVideoGrabber->sharpness, -100, 100);
+    contrast.set("contrast", rpiCameraVideoGrabber->contrast, -100, 100);
+    brightness.set("brightness", rpiCameraVideoGrabber->brightness, 0, 100);
+    saturation.set("saturation", rpiCameraVideoGrabber->saturation, -100, 100);
     frameStabilizationEnabled.set("FrameStabilization", false);
     colorEnhancementEnabled.set("ColorEnhancement", false);
     ledEnabled.set("LED", false);
@@ -77,38 +77,38 @@ void ControlPanel::onHideGuiChanged(bool & doHide)
 void ControlPanel::onSharpnessChanged(int & sharpness_)
 {
 	ofLogVerbose(__func__) << sharpness_;
-	omxVideoGrabber->setSharpness(sharpness_);
+	rpiCameraVideoGrabber->setSharpness(sharpness_);
 }
 
 void ControlPanel::onContrastChanged(int & contrast_)
 {
 	ofLogVerbose(__func__) << contrast_;
-	omxVideoGrabber->setContrast(contrast_);
+	rpiCameraVideoGrabber->setContrast(contrast_);
 }
 
 void ControlPanel::onBrightnessChanged(int & brightness_)
 {
 	ofLogVerbose(__func__) << brightness_;
-	omxVideoGrabber->setBrightness(brightness_);
+	rpiCameraVideoGrabber->setBrightness(brightness_);
 }
 
 void ControlPanel::onSaturationChanged(int & saturation_)
 {
 	ofLogVerbose(__func__) << saturation_;
-	omxVideoGrabber->setSaturation(saturation_);
+	rpiCameraVideoGrabber->setSaturation(saturation_);
 }
 void ControlPanel::onFrameStabilizationChanged(bool & doFrameStabilization)
 {
-	omxVideoGrabber->setFrameStabilization(doFrameStabilization);
+	rpiCameraVideoGrabber->setFrameStabilization(doFrameStabilization);
 }
 
 void ControlPanel::onColorEnhancementChanged(bool & doColorEnhancement)
 {
-	omxVideoGrabber->setColorEnhancement(doColorEnhancement);
+	rpiCameraVideoGrabber->setColorEnhancement(doColorEnhancement);
 }
 
 void ControlPanel::onLEDEnabledChanged(bool & doEnableLED)
 {
-	omxVideoGrabber->setLEDStatus(doEnableLED);
+	rpiCameraVideoGrabber->setLEDStatus(doEnableLED);
 }
 

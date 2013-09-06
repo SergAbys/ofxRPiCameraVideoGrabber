@@ -4,7 +4,7 @@
 
 #include "ofxGui.h"
 #include "ofxOscParameterSync.h"
-#include "ofxOMXVideoGrabber.h"
+#include "ofxRPiCameraVideoGrabber.h"
 
 
 class ControlPanel
@@ -12,10 +12,10 @@ class ControlPanel
 public:
 	ControlPanel();
 	
-	void setup(ofxOMXVideoGrabber* omxVideoGrabber_);
+	void setup(ofxRPiCameraVideoGrabber* rpiCameraVideoGrabber_);
 	void update();
 	void draw();
-	ofxOMXVideoGrabber* omxVideoGrabber;
+	ofxRPiCameraVideoGrabber* rpiCameraVideoGrabber;
 	
 private:
 	ofParameter<int> sharpness;
